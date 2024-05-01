@@ -1,0 +1,71 @@
+#include <PZEM004Tv30.h>
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <UniversalTelegramBot.h>
+
+//#include <PZEM004T.h>
+
+// Konfigurasi WiFi
+const char* WIFI_SSID= "Sesuai nama Wi-fi";
+const char* WIFI_PASSWORD= "Sesuai nama Wi-fi";
+
+// Konfigurasi Telegram
+#define BOT_TOKEN ""Sesuai Bot Token""
+#define CHAT_ID ""Sesuai Id Token""
+
+// Konfigurasi sensor PZEM-004T
+#define PZEM_RX 18 // Pin RX terhubung ke pin D16 pada ESP32
+#define PZEM_TX 19 // Pin TX terhubung ke pin D17 pada ESP32
+
+HardwareSerial mySerial(1);
+PZEM004Tv30 pzem(&mySerial, PZEM_RX, PZEM_TX); 
+//PZEM004Tv30 pzem(PZEM_RX, PZEM_TX);
+
+WiFiClientSecure client;
+UniversalTelegramBot bot(BOT_TOKEN, client);
+
+void setup() {
+  Serial.begin(115200);
+  delay(100);
+
+  // Mulai koneksi WiFi
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.println("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.println(".");
+  }
+  Serial.println();
+  Serial.print("Connected to WiFi, IP address: ");
+  Serial.println("Connected to WiFi");
+}
+
+void loop() {
+  if (pzem.read()) {
+  float voltage = 0.0;
+  float current = 0.0;
+  float power = 0.0;
+  float energy = 0.0;
+  float frequency = 0.0;
+  float pf = 0.0;
+
+  // Ambil data dari sensor PZEM
+  voltage = pzem.voltage();
+  current = pzem.current();
+  power = pzem.power();
+  energy = pzem.energy();
+  frequency = pzem.frequency();
+  pf = pzem.pf();
+
+  // Kirim data ke Telegram
+  String message = "Voltage: " + String(voltage) + "V\n"
+                 + "Current: " + String(current) + "A\n"
+                 + "Power: " + String(power) + "W\n"
+                 + "Energy: " + String(energy) + "kWh\n"
+                 + "Frequency: " + String(frequency) + "Hz\n"
+                 + "Power Factor: " + String(pf);
+
+  bot.sendMessage(CHAT_ID, message, "914925085");
+  delay(200); // Kirim pesan setiap 60 detik (sesuaikan kebutuhan Anda)
+}
+}
